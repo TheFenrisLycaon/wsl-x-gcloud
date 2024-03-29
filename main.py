@@ -1,8 +1,80 @@
+import os
+import subprocess
+import zipfile
+
+import requests
 import typer
 from rich import print
 
+import config
 
-import subprocess
+
+def extract_zip(zip_file, extract_to):
+    """
+    Extract a zip file to the specified directory.
+    Args:
+        zip_file (str): Path to the zip file to be extracted.
+        extract_to (str): Directory where the contents of the zip file will be extracted.
+
+    Returns:
+        bool: True if extraction is successful, False otherwise.
+    """
+    try:
+        # Open the zip file
+        with zipfile.ZipFile(zip_file, "r") as zip_ref:
+            # Extract all contents to the specified directory
+            zip_ref.extractall(extract_to)
+        return True
+    except Exception as e:
+        # Handle any errors that occur during extraction
+        print(f"Error extracting zip file: {e}")
+        return False
+
+
+def download_file(url, destination):
+    """
+    Download a file from the specified URL and save it to the destination.
+
+    Args:
+        url (str): The URL of the file to download.
+        destination (str): The path where the downloaded file will be saved.
+
+    Returns:
+        bool: True if the file is successfully downloaded, False otherwise.
+    """
+    try:
+        # Send a GET request to the URL to download the file
+        response = requests.get(url)
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Open the destination file in binary write mode and write the content of the response
+            with open(destination, "wb") as f:
+                f.write(response.content)
+            print(f"File downloaded successfully to: {destination}")
+            return True
+        else:
+            print(f"Failed to download file: HTTP status code {response.status_code}")
+            return False
+    except Exception as e:
+        # Handle any errors that occur during the download process
+        print(f"Error downloading file: {e}")
+        return False
+
+
+def download_arch_linux():
+    """
+    Download the Arch Linux zip file from the URL specified in the TOML config file.
+
+    Returns:
+        bool: True if the zip file is successfully downloaded, False otherwise.
+    """
+    try:
+        # Assuming CONFIG is a global variable containing necessary configuration
+        return download_file(config.ARCH_LINUX_ZIP_URL, config.ARCH_LINUX_ZIP_FILENAME)
+    except Exception as e:
+        # Handle any errors that occur during the download process
+        print(f"Error downloading Arch Linux: {e}")
+        return False
 
 
 def verify_wsl():
@@ -48,6 +120,8 @@ def install_wsl():
             check=True,
         )
         print("WSL is successfully enabled.")
+
+        subprocess.run(["wsl", "--set-default-version", "2"])
         return True
     except subprocess.CalledProcessError as e:
         # Error occurred while enabling WSL
@@ -64,9 +138,30 @@ def verify_arch():
 
 def install_arch():
     """
-    Install Arch Linux in WSL if not already installed
+    Install Arch Linux in WSL.
+
     """
-    ...
+    # Download the Arch Linux zip file
+    if not download_arch_linux():
+        print("Failed to download Arch Linux zip file.")
+        exit()
+
+    # Extract the downloaded zip file
+    if not extract_zip(config.ARCH_LINUX_ZIP_FILENAME, config.ARCH_LINUX_DIR):
+        print("Failed to extract Arch Linux zip file.")
+        exit()
+
+    # Change directory to the extracted folder
+    os.chdir(config.ARCH_LINUX_DIR)
+
+    # Run the arch.exe executable
+    try:
+        subprocess.run(["./arch.exe"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running arch.exe: {e}")
+        exit()
+
+    print("Arch Linux installed successfully.")
 
 
 def verify_conda():
