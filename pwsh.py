@@ -96,6 +96,7 @@ def install_arch():
     os.chdir(config.ARCH_LINUX_DIR)
 
     # Run the arch.exe executable
+    # TODO : Testing pending.
     try:
         subprocess.run(["./arch.exe"], check=True)
     except subprocess.CalledProcessError as e:

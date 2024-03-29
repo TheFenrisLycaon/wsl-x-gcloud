@@ -1,23 +1,54 @@
-# linux_part.py
-
 import os
 import subprocess
 
 from src import config, util
 
 
-def verify_conda():
-    """
-    Verify if Conda (Anaconda/Miniconda) is installed
-    """
-    ...
-
-
 def install_conda():
     """
-    Install Conda if not already installed
+    Install Miniconda if not already installed.
+
+    This function checks if Miniconda is already installed. If not, it downloads
+    the Miniconda installer, runs it in WSL, and then prints a success message.
+
+    Returns:
+        None
     """
-    ...
+    if verify_conda():
+        print("Miniconda is already installed.")
+        return
+
+    # Download the Miniconda installer
+    if not util.download_miniconda():
+        print("Failed to download Miniconda installer.")
+        exit()
+
+    # Run the Miniconda installer
+    # TODO: Testing pending.
+    try:
+        run_wsl_command("./Miniconda3-latest-Linux-x86_64.sh")
+    except subprocess.CalledProcessError as e:
+        print(f"Error installing Miniconda: {e}")
+        exit()
+
+    print("Miniconda installed successfully.")
+
+
+def verify_conda():
+    """
+    Verify if Miniconda is already installed.
+
+    This function checks if Miniconda is already installed by attempting to
+    run the command 'conda --version' in WSL.
+
+    Returns:
+        bool: True if Miniconda is installed, False otherwise.
+    """
+    try:
+        output = run_wsl_command("conda --version")
+        return output is not None
+    except subprocess.CalledProcessError:
+        return False
 
 
 def verify_env_setup():
@@ -31,7 +62,9 @@ def setup_conda_env():
     """
     Setup Conda environments if not already set up
     """
-    ...
+    if verify_env_setup():
+        print("Conda environment is alredy setup.")
+        return
 
 
 def verify_datastore_file():
@@ -45,28 +78,9 @@ def init_datastore():
     """
     Initialize the datastore file if not present
     """
-    ...
-
-
-def enter_linux_env():
-    """
-    Enter Linux environment (WSL)
-    """
-    ...
-
-
-def switch_to_bash():
-    """
-    Switch from PowerShell/CMD to the Bash environment.
-    """
-    try:
-        # Execute the wsl command to switch to the WSL environment
-        os.system("wsl bash")
-    except subprocess.CalledProcessError as e:
-        print(f"Error switching to Bash: {e}")
-        exit()
-
-    return
+    if verify_datastore_file():
+        print("A datastore file is already present.")
+        return
 
 
 def update_rc_file():
@@ -87,54 +101,49 @@ def install_gcloud():
     """
     Install Google Cloud SDK if not already installed
     """
-    ...
+    if verify_gcloud():
+        print("Gcloud is already installed.")
+        return
 
 
-def reload_shell():
-    """
-    Reload the shell to apply configuration changes
-    """
-    ...
+def run_wsl_command(command):
+    try:
+        # Use 'wsl' command to run commands in WSL
+        command_list = [
+            "wsl",
+            config.DEFAULT_SHELL,
+            "-ic",
+            f"source ~/.{config.DEFAULT_SHELL}rc && " + command,
+        ]
+        result = subprocess.run(
+            command_list, capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing command '{' '.join(command_list)}' in WSL: {e}")
+        return None
 
 
 def linux_part():
     """
     Linux part of the script.
     """
-    if not verify_conda():
-        print("Installing conda.")
-        install_conda()
-        print("Conda is now installed.")
-    else:
-        print("Conda is already installed.")
+    print("Installing conda.")
+    install_conda()
 
-    if not verify_env_setup():
-        print("Setting up conda environment.")
-        setup_conda_env()
-        print("Conda environments have been setup.")
-    else:
-        print("Conda env is already setup.")
+    print("Setting up conda environment.")
+    setup_conda_env()
 
-    reload_shell()
-
-    if not verify_datastore_file():
-        print("Creating datastore file.")
-        init_datastore()
-        print("Datastore file is created.")
-    else:
-        print("Datastore file is already present.")
+    print("Creating datastore file.")
+    init_datastore()
 
     print("Updating bashrc")
     update_rc_file()
-    reload_shell()
-    print("bashrc updated with configs.")
 
-    if not verify_gcloud():
-        print("Gcloud is not installed. | Installing gcloud.")
-        install_gcloud()
-        print("Gcloud installed.")
-    else:
-        print("Gcloud is already installed.")
+    print("Installing Google Cloud SDK")
+    install_gcloud()
+
+    return
 
 
 if __name__ == "__main__":

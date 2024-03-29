@@ -92,3 +92,19 @@ def download_arch_linux():
         # Handle any errors that occur during the download process
         print(f"Error downloading Arch Linux: {e}")
         return False
+
+
+def download_miniconda():
+    """
+    Download the Miniconda installer from the URL specified in the configuration.
+
+    Returns:
+        bool: True if the installer is successfully downloaded, False otherwise.
+    """
+    try:
+        # Assuming CONFIG is a global variable containing necessary configuration
+        return download_file(config.MINICONDA_URL, config.MINICONDA_FILE)
+    except Exception as e:
+        # Handle any errors that occur during the download process
+        print(f"Error downloading Miniconda: {e}")
+        return False

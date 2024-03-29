@@ -2,3 +2,5 @@ __pycache__/
 .vscode
 *.zip
 *.tar.gz
+miniconda.sh
+test.py
