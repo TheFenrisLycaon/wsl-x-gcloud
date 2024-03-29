@@ -54,33 +54,64 @@ def verify_conda():
 def verify_env_setup():
     """
     Verify if the environment setup for Conda is done
+
+    Returns:
+        Tuple[bool, bool]: Tuple indicating whether Python 2 and Python 3 environments are set up.
     """
-    ...
+    has_py2 = run_wsl_command(f"conda activate {config.PYTHON2_ENV_NAME}")
+    has_py3 = run_wsl_command(f"conda activate {config.PYTHON3_ENV_NAME}")
+
+    return has_py2, has_py3
 
 
 def setup_conda_env():
     """
     Setup Conda environments if not already set up
     """
-    if verify_env_setup():
-        print("Conda environment is alredy setup.")
-        return
+    has_py2, has_py3 = verify_env_setup()
 
+    if has_py2 is None:
+        run_wsl_command(f"conda create -n {config.PYTHON2_ENV_NAME} python=2.7")
 
-def verify_datastore_file():
-    """
-    Verify if the datastore file is present
-    """
-    ...
+    if has_py3 is None:
+        run_wsl_command(f"conda create -n {config.PYTHON3_ENV_NAME} python=3.11")
+
+    print("Conda environment setup is now complete.")
+    return
 
 
 def init_datastore():
     """
     Initialize the datastore file if not present
     """
-    if verify_datastore_file():
-        print("A datastore file is already present.")
-        return
+    return run_wsl_command(f"touch {config.DATASTORE_PATH}")
+
+
+def append_line_to_file(line, filepath):
+    """
+    Append a line to a file if it doesn't already exist.
+
+    Args:
+        line (str): The line to append to the file.
+        filepath (str): The path to the file.
+
+    Returns:
+        bool: True if the line is appended, False if the line already exists in the file.
+    """
+    # Check if the line already exists in the file
+    output = run_wsl_command(f"grep -qx '{line}' {filepath} && echo 1 || echo 0")
+
+    if output is None:
+        output = "0"
+
+    # If the line doesn't exist, append it to the file
+    if output.strip() == "0":
+        run_wsl_command(f'echo "{line}" >> {filepath}')
+        print(f"Line '{line}' appended to {filepath}")
+        return True
+    else:
+        print(f"Line '{line}' already exists in {filepath}")
+        return False
 
 
 def update_rc_file():
@@ -120,11 +151,11 @@ def run_wsl_command(command):
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Error executing command '{' '.join(command_list)}' in WSL: {e}")
+        print(f"Error executing command {' '.join(command_list)} in WSL")
         return None
 
 
-def linux_part():
+def bash_main():
     """
     Linux part of the script.
     """
@@ -147,4 +178,4 @@ def linux_part():
 
 
 if __name__ == "__main__":
-    linux_part()
+    bash_main()

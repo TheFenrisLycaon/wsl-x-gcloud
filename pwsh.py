@@ -131,7 +131,7 @@ def verify_arch():
         return False
 
 
-def main():
+def pwsh_main():
     """
     This function enables WSL on the machine and installs Arch Linux in WSL.
     """
@@ -143,4 +143,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    pwsh_main()
