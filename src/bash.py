@@ -23,13 +23,10 @@ def install_conda():
         print("Failed to download Miniconda installer.")
         exit()
 
-    # Run the Miniconda installer
-    # TODO: Testing pending.
-    try:
-        run_wsl_command("./Miniconda3-latest-Linux-x86_64.sh")
-    except subprocess.CalledProcessError as e:
-        print(f"Error installing Miniconda: {e}")
-        exit()
+    run_wsl_command(f"mkdir -p {config.CONDA_HOME}")
+    run_wsl_command(f"bash miniconda.sh -b -s -t -u -p {config.CONDA_HOME}")
+    run_wsl_command("rm miniconda.sh")
+    run_wsl_command(f"{config.CONDA_HOME}/bin/conda init {config.DEFAULT_SHELL}")
 
     print("Miniconda installed successfully.")
 
@@ -71,10 +68,12 @@ def setup_conda_env():
     has_py2, has_py3 = verify_env_setup()
 
     if has_py2 is None:
-        run_wsl_command(f"conda create -n {config.PYTHON2_ENV_NAME} python=2.7")
+        print("Creating Python 2.7 environment")
+        run_wsl_command(f"conda create -n {config.PYTHON2_ENV_NAME} python=2.7 -y")
 
     if has_py3 is None:
-        run_wsl_command(f"conda create -n {config.PYTHON3_ENV_NAME} python=3.11")
+        print("Creating Python 3.11 environment")
+        run_wsl_command(f"conda create -n {config.PYTHON3_ENV_NAME} python=3.11 -y")
 
     print("Conda environment setup is now complete.")
     return
@@ -87,38 +86,36 @@ def init_datastore():
     return run_wsl_command(f"touch {config.DATASTORE_PATH}")
 
 
-def append_line_to_file(line, filepath):
-    """
-    Append a line to a file if it doesn't already exist.
-
-    Args:
-        line (str): The line to append to the file.
-        filepath (str): The path to the file.
-
-    Returns:
-        bool: True if the line is appended, False if the line already exists in the file.
-    """
-    # Check if the line already exists in the file
-    output = run_wsl_command(f"grep -qx '{line}' {filepath} && echo 1 || echo 0")
-
-    if output is None:
-        output = "0"
-
-    # If the line doesn't exist, append it to the file
-    if output.strip() == "0":
-        run_wsl_command(f'echo "{line}" >> {filepath}')
-        print(f"Line '{line}' appended to {filepath}")
-        return True
-    else:
-        print(f"Line '{line}' already exists in {filepath}")
-        return False
-
-
 def update_rc_file():
     """
     Update the shell configuration file (e.g., .bashrc)
     """
-    ...
+    rc_contents = ["# >>> Google Cloud SDK Environment variables >>>\n"]
+    rc_contents.append(
+        f"export CLOUDSDK_DEV_PYTHON='{config.CONDA_HOME}/envs/{config.PYTHON2_ENV_NAME}/bin/python'\n"
+    )
+    rc_contents.append(f"export CLOUD_SDK_ROOT='{config.GCLOUD_HOME}'\n")
+    rc_contents.append(
+        f"export CLOUDSDK_PYTHON_HOME='{config.CONDA_HOME}/envs/{config.PYTHON3_ENV_NAME}'\n"
+    )
+    rc_contents.append(f"export CLOUDSDK_PYTHON='{config.CONDA_HOME}/envs/{config.PYTHON3_ENV_NAME}/bin/python'\n")
+    rc_contents.append(f"export CLOUDSDK_DATASTORE='{config.DATASTORE_PATH}'\n")
+    rc_contents.append("export APPLICATION_ID='dev~None'\n")
+    rc_contents.append(
+        'alias runapp="'
+        + "python3 $CLOUD_SDK_ROOT/bin/dev_appserver.py"
+        + " --runtime_python_path='python27=$CLOUDSDK_DEV_PYTHON,python3=$CLOUDSDK_PYTHON'"
+        + " --python_virtualenv_path $CLOUDSDK_PYTHON_HOME"
+        + " --datastore_path=$CLOUDSDK_DATASTORE"
+        + '"\n'
+    )
+    rc_contents.append("# <<< Google Cloud SDK Environment variables <<<\n\n")
+
+    with open("rc", "w") as f:
+        f.writelines(rc_contents)
+
+    run_wsl_command("sed -i -e 's/\r//g' rc")
+    run_wsl_command(f"cat rc >> ~/.{config.DEFAULT_SHELL}rc")
 
 
 def verify_gcloud():
@@ -151,7 +148,7 @@ def run_wsl_command(command):
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Error executing command {' '.join(command_list)} in WSL")
+        print(f"Error: {e}")
         return None
 
 
@@ -161,18 +158,23 @@ def bash_main():
     """
     print("Installing conda.")
     install_conda()
+    print("\n----------------------------------------------------------------------\n")
 
     print("Setting up conda environment.")
     setup_conda_env()
+    print("\n----------------------------------------------------------------------\n")
 
     print("Creating datastore file.")
     init_datastore()
+    print("\n----------------------------------------------------------------------\n")
 
     print("Updating bashrc")
     update_rc_file()
+    print("\n----------------------------------------------------------------------\n")
 
     print("Installing Google Cloud SDK")
     install_gcloud()
+    print("\n----------------------------------------------------------------------\n")
 
     return
 

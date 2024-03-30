@@ -137,9 +137,11 @@ def pwsh_main():
     """
     print("Enabling WSL on the machine.")
     install_wsl()
+    print("\n----------------------------------------------------------------------\n")
 
     print("Installing Arch Linux in WSL.")
     install_arch()
+    print("\n----------------------------------------------------------------------\n")
 
 
 if __name__ == "__main__":
