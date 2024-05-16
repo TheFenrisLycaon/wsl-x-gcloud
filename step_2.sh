@@ -1,3 +1,5 @@
+!#/usr/sbin/bash
+
 # Set options for error handling
 set -eu
 
@@ -102,7 +104,7 @@ install_gcloud() {
     curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-470.0.0-linux-x86_64.tar.gz
 
     echo "Extracting Google Cloud SDK..."
-    mkdir $HOME/google-cloud-sdk
+    mkdir -p $HOME/google-cloud-sdk
     tar -xf google-cloud-cli-470.0.0-linux-x86_64.tar.gz -C $HOME
 
     rm ./google-cloud-cli-470.0.0-linux-x86_64.tar.gz
