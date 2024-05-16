@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Set options for error handling
 set -eu
 
@@ -78,6 +76,9 @@ setup_conda_env() {
 }
 
 update_rc_file() {
+
+    touch $HOME/.bashrc	
+
     # Append to the .bashrc file using a here document
     cat >>"$HOME/.bashrc" <<'EOF'
 # >>> Google Cloud SDK Environment variables >>>
@@ -119,10 +120,12 @@ install_gcloud() {
 
 
 bash_main() {
+    touch $HOME/.bashrc
+
     # Call install_conda function to install Conda
     echo "Installing Conda."
     install_conda
-    
+     
     # Source .bashrc to ensure environment changes from conda take effect
     source $HOME/.bashrc
 
