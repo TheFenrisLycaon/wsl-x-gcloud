@@ -82,8 +82,11 @@ function Install-ArchLinux {
     # Change directory to the extracted folder
     Set-Location -Path $extractPath
 
+    # Rename to tummee.exe
+    Rename-Item -Path ".arch.exe" -NewName ".\tummee.exe"
+
     # Execute arch.exe
-    & .\arch.exe
+    & .\tummee.exe
 
     Write-Host "Arch Linux installation completed successfully."
 }
