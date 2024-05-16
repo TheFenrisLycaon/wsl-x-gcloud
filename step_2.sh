@@ -149,6 +149,9 @@ bash_main() {
     # Call install_gcloud function to install Google Cloud SDK
     echo "Installing Google Cloud SDK."
     install_gcloud
+
+    # # Source .bashrc to apply changes
+    source $HOME/.bashrc  
 }
 
 
